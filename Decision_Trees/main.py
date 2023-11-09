@@ -78,3 +78,8 @@ y_1 = regr_1.predict([X_test])
 print(f"Prediction For CO2 Based On Immediate Data: {y_1[0]}")
 print(f"Ground truth CO2 From Instance Tested: {class_vector[instance_index_random_pick]}")
 
+
+# import pickle
+# model_location = "regression_tree_model"
+# # pickle.dump(regr_1, open(model_location, "wb"))
+# model = pickle.load(open(model_location, "rb"))
