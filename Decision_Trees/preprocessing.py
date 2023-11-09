@@ -1,8 +1,6 @@
 import time
-
-
 ##Functions for preprocessing data
-    #(global-data-on-sustainable-energy)
+    #Ideal Dataset: (global-data-on-sustainable-energy)
 
 
 ##Group entries together by country into a sublist
@@ -27,6 +25,33 @@ def separateCountries(raw_entries_list):
         country_sublist_temp.append(entry[1:]) #skip country name 
 
     return country_list, list_of_country_sublists
+
+
+##Shift data in specified column up by number of indicies specified
+    #Does not replace the column data left on the bottom entries in the data_set
+    #Instead, leaves that column empty (or whatever empty character  (or number) is specified) for those instances 
+#Returns dataset after column shifting 
+def shiftColumnDataUp(data_set, column_index_to_shift, shift_n, remainder_col_replacement_char = ''):
+    column_vec = [] #size will be len(data_set) - shift_n
+    i = 0
+    for entry in data_set:
+        if (i >= shift_n):  #gather values for column vec starting after n entries 
+            column_vec.append(entry[column_index_to_shift])
+        i += 1
+
+    parsed_dataset = []
+    i = 0 
+    for entry in data_set:
+        parsed_entry = entry.copy()
+        if (i >= len(data_set) - shift_n): #columns past the (len-shift) index will have no label due to shift
+                                           #so we'll append something to it 
+            parsed_entry[column_index_to_shift] = remainder_col_replacement_char
+        else:
+            parsed_entry[column_index_to_shift] = column_vec[i]
+        parsed_dataset.append(parsed_entry)
+        i += 1
+        
+    return parsed_dataset
 
 
 
@@ -56,22 +81,28 @@ def removeMissingValCollumns(headers, data_set):
     missing_val_detected_collumncount_list_sorted = missing_val_detected_collumncount_list.copy()
     missing_val_detected_collumncount_list_sorted.sort(key = lambda x: x[1], reverse=True)
     print(f"Parsed dataset and removed collumns that have missing values")
-    print(f"Columns And # Missing Values:\n{missing_val_detected_collumncount_list}\n~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"Columns And # Missing Values:\n{missing_val_detected_collumncount_list_sorted}\n~~~~~~~~~~~~~~~~~~~~~~~")
     
     return parsed_headers, parsed_data_set
 
 
 
-
+#Finds the index of each specified column label within a list of given headers to a dataset
+    #Removes the columns specified
+    #If column cannot be found, it is simply ignored
 def removeSelectColumnsByName(headers, data_set, columns_to_remove):
-
-    return 0
+    headers_temp = headers
+    data_set_temp = data_set
+    for col_label in columns_to_remove:
+        if (col_label in headers_temp):
+            headers_temp, data_set_temp = removeSelectColumnByIndex(headers_temp, data_set_temp, headers_temp.index(col_label))
+    
+    return headers_temp, data_set_temp
 
 
 #Returns headers and dataset after the column was removed
 def removeSelectColumnByIndex(headers, data_set, col_index_to_remove): 
     print(f"Removing Column: {col_index_to_remove}: ({headers[col_index_to_remove]})")
-
     parsed_headers = [header for i, header in enumerate(headers) if (i != col_index_to_remove)]
     parsed_dataset = []
 
@@ -84,7 +115,6 @@ def removeSelectColumnByIndex(headers, data_set, col_index_to_remove):
 
 
 
-
 ##Identifies missing values and simply treats them as 0 
     #Also parse string values into numbers while we are at it (PUT THIS FEATUER SOME WHER ELSE LATER)
 def zeroOutMissingValues(data_set):
@@ -94,19 +124,12 @@ def zeroOutMissingValues(data_set):
         for i, column_val in enumerate(entry):
             if column_val == '':
                 entry_temp.append(0)      
-            elif isinstance(column_val, str): #Try to convert it to a number
-                if("." in column_val):
-                    entry_temp.append(float(column_val.replace(",", "")))
-                else:
-                    entry_temp.append(int(column_val.replace(",", "")))
             else:
                 entry_temp.append(column_val)
-
 
         parsed_dataset.append(entry_temp)
 
     return parsed_dataset
-
 
 
 
@@ -132,3 +155,28 @@ def getSpecificColumn(data_set, column, headers = None):
     
     return column_vector
     
+
+
+##Identifies collumns with data that is a number but in str format and tries to convert them to numbers
+    #Does not handle converting true string entries to numbers (ie: discrete features)
+#Returns dataset containing numerical data
+def strNumbersToNumerical(data_set):
+    parsed_dataset = []
+    for entry in data_set:
+        entry_temp = []
+        for i, column_val in enumerate(entry):
+            try:
+                if isinstance(column_val, str): #Try to convert it to a number
+                    if("." in column_val):
+                        number_val = float(column_val.replace(",", ""))
+                    else:
+                        number_val = int(column_val.replace(",", ""))
+                    entry_temp.append(number_val)
+                else:
+                    entry_temp.append(column_val) 
+            except ValueError: #Catch cannot convert errors and leave it as a string
+                entry_temp.append(column_val) 
+
+        parsed_dataset.append(entry_temp)
+
+    return parsed_dataset
