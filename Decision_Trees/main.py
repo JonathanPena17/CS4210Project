@@ -1,12 +1,15 @@
 # Import the necessary modules and libraries
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 import csv
 import preprocessing
 import time 
 import random
+import sklearn.model_selection as skmodel
+
 
 ##Get Data
-data_file = open("archive/global-data-on-sustainable-energy (1).csv", "r")
+data_file = open("C:\\Users\\Rebecca\\4210project\\Decision_Trees\\archive\\global-data-on-sustainable-energy (1).csv", "r")
 csv_obj = csv.reader(data_file)
 
 headers = []
@@ -16,9 +19,9 @@ for i, line in enumerate(csv_obj):
         headers = line
     else:
         data_entries.append(line)
-print(list(enumerate(headers)))
-print(f"Example entry (before parsing):\n{data_entries[0]}")
-print(len(data_entries))
+#print(list(enumerate(headers)))
+#print(f"Example entry (before parsing):\n{data_entries[0]}")
+#print(len(data_entries))
 
 
 ##Parse Data
@@ -30,7 +33,7 @@ country_list, list_of_country_data_sublists = preprocessing.separateCountries(da
     #For each country, shift it's CO2 Class label up by numbers of years we want the model to predict by. 
         #Keep in mind this reduces the total amount of instances we will have, since later years have no data from future to match with, so these rows should be discarded 
 class_label_index = headers.index('Value_co2_emissions_kt_by_country' ) -1 # -1 since we removed first column (countries) from the data, and headers hasn't been updated to reflect that  
-year_prediction_window = 2 #n = number of years the instance data is offset by compared to its class label
+year_prediction_window = 1 #n = number of years the instance data is offset by compared to its class label
 parsed_data = []
 unlabled_entries = [] #Remainder entries that end up without a class label due to label shift step (may be useful later for inferencing)
 
@@ -40,9 +43,9 @@ for country_entries in list_of_country_data_sublists: #Shift CO2 entries by coun
     parsed_data.extend([entry for i, entry in enumerate(shifted_entries) if (i < len(shifted_entries) - year_prediction_window)])
 
     #Checking if shift was performed correctly 
-print(list_of_country_data_sublists[0][0][12])
-print(list_of_country_data_sublists[0][0 + year_prediction_window][12])
-print(parsed_data[0][12]) 
+#print(list_of_country_data_sublists[0][0][12])
+#print(list_of_country_data_sublists[0][0 + year_prediction_window][12])
+#print(parsed_data[0][12]) 
 
 
 ##Parse data for training
@@ -70,21 +73,31 @@ class_label = 'Value_co2_emissions_kt_by_country' #also known as column 12
 class_vector = preprocessing.getSpecificColumn(parsed_data, class_label, parsed_headers)
 parsed_headers, parsed_data_no_class = preprocessing.removeSelectColumnByIndex(parsed_headers, parsed_data, parsed_headers.index(class_label))
 
-print(len(parsed_data_no_class)) #Data and Class sizes match 
-print(len(class_vector))
+#print(len(parsed_data_no_class)) #Data and Class sizes match 
+#print(len(class_vector))
+
+#Split data into training and testing sets
+#Test size = x% of data that is used for testing
+#Random_state is a number that keeps the same columns picked each time. it can be any number
+#but keeping it the same will keep the same split
+X_train, X_test, y_train, y_test = skmodel.train_test_split(parsed_data_no_class, class_vector, test_size=0.1, random_state=42)
 
 
-##Fit regression model
-X = parsed_data_no_class
-y = class_vector
-regr_1 = DecisionTreeRegressor(max_depth=10) #play with depth => max number of features it will integrate into decision paths
-regr_1.fit(X, y)
+##Fit regression model 
+#uncomment this and comment out skmodel.train_test_split line if not using training/testing splits
+#X_train = parsed_data_no_class
+#y_train = class_vector
+#if you input the same number it creates the same decision tree each time. no need to save and load, 
+#unless training takes a long time
+regr_1 = DecisionTreeRegressor(max_depth=3, random_state=10) #play with depth => max number of features it will integrate into decision paths
+#regr_1 = RandomForestRegressor(n_estimators=100, random_state=32)
+regr_1.fit(X_train, y_train) 
 
 
 ## Predict
-instance_index_random_pick = random.randint(0, len(parsed_data_no_class)-1)
-X_test = parsed_data_no_class[instance_index_random_pick] #use a random entry from the training data... (because lazy)
-y_1 = regr_1.predict([X_test])
+instance_index_random_pick = random.randint(0, len(X_test)-1)
+#X_test = parsed_data_no_class[instance_index_random_pick] #use a random entry from the training data... (because lazy)
+y_1 = regr_1.predict([X_test[instance_index_random_pick]])
 
 
 ##Compare
