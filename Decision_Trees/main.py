@@ -6,10 +6,10 @@ import preprocessing
 import time 
 import random
 import sklearn.model_selection as skmodel
-
+import os 
 
 ##Get Data
-data_file = open("C:\\Users\\Rebecca\\4210project\\Decision_Trees\\archive\\global-data-on-sustainable-energy (1).csv", "r")
+data_file = open("archive\\global-data-on-sustainable-energy (1).csv", "r")
 csv_obj = csv.reader(data_file)
 
 headers = []
@@ -89,7 +89,7 @@ X_train, X_test, y_train, y_test = skmodel.train_test_split(parsed_data_no_class
 #y_train = class_vector
 #if you input the same number it creates the same decision tree each time. no need to save and load, 
 #unless training takes a long time
-regr_1 = DecisionTreeRegressor(max_depth=3, random_state=10) #play with depth => max number of features it will integrate into decision paths
+regr_1 = DecisionTreeRegressor(max_depth=20, random_state=10) #play with depth => max number of features it will integrate into decision paths
 #regr_1 = RandomForestRegressor(n_estimators=100, random_state=32)
 regr_1.fit(X_train, y_train) 
 
